@@ -53,12 +53,19 @@ const useStyles = makeStyles({
 // }));
 
 const useSelected = () => {
+  var prod=[];
   const [selectedProduct, setSelectedProducts] = useState([]);
+  console.log(selectedProduct);
+  console.log("pr8int");
+  var i=0;  
+
+  
+
   const addItemCart = (itm, size) => {
     setSelectedProducts(
-      selectedProduct.find(product => product.sku === itm.sku) ?
+      selectedProduct.find(product => product.sku === itm.sku && product.size === size) ?
         selectedProduct.map(product =>
-          product.sku === itm.sku ?
+          product.sku === itm.sku && product.size === size  ?
             { ...product, quantity: product.quantity + 1 }
             :
             product
@@ -66,8 +73,33 @@ const useSelected = () => {
         :
         [{ ...itm, size, quantity: 1 }].concat(selectedProduct)
     );
+    alert("Added to Cart...\n"+"Click cart icon to see your cart")
   }
-  return [selectedProduct, addItemCart];
+
+  const removeItemCart = (itm) => {  
+    for(i=0;i<selectedProduct.length;++i)
+    {
+      if(itm.sku != selectedProduct[i].sku)prod.push(selectedProduct[i]);
+      if(itm.sku === selectedProduct[i].sku && itm.size!=selectedProduct[i].size)prod.push(selectedProduct[i]);
+    }
+    setSelectedProducts(prod);
+    prod=[];
+    alert("test lert 1")
+    console.log(prod)
+
+    // setSelectedProducts(
+    //     selectedProduct.map(product =>
+    //       product.sku === itm.sku  ?
+    //         { ...product, quantity: product.quantity-1 }
+    //         :
+    //         product
+    //     )        
+    // );
+    //  alert("test lert")
+  }
+
+  
+  return [selectedProduct, addItemCart ,removeItemCart];
 }
 
 const Items = ({product, addSelectedProduct}) => {
@@ -128,9 +160,9 @@ const App = () => {
   const [data, setData] = useState({});
   const products = Object.values(data);
   const [openCart, setOpenCart] = useState(false);
-  const [selectedProduct, addSelectedProduct] = useSelected();
+  const [selectedProduct, addSelectedProduct,delSelectedProduct] = useSelected();
   const myData = selectedProduct;
-  console.log(myData);
+  console.log(myData[0]);
   const [state, setState] = React.useState({
     top: false,
     left: false,
@@ -153,19 +185,27 @@ const App = () => {
     }
     setState({ ...state, [side]: open });
   };
+  
+
+
 
   const sideList = side => (
     <div className = {classes.list} role = "presentation" onClick = {toggleDrawer(side, false)} onKeyDown = {toggleDrawer(side, false)}>
       <List>
         {myData.map(myData => 
         <ListItem>
-          <img className = {classes.cartmedia} src = {'./data/products/' + myData.sku + '_1.jpg'} />
+          <img className = {classes.cartmedia} src = {'./data/products/' + myData.sku + '_2.jpg'} />
           <br/>Name: {myData.title}
           <br/>Price: {myData.currencyFormat}{myData.price}
           <br/>Size: {myData.size}
           <br/>Quantity: {myData.quantity}
           <Divider/>
+          <IconButton aria-label="delete" onClick={()=> {delSelectedProduct(myData)}} >
+           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>								
+          </IconButton>
         </ListItem>)}
+        <button >Delete from Cart</button>
+        
       </List>
     </div>
   );
