@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import firebase from 'firebase/app';
 import 'firebase/database';
+import 'firebase/auth';
+import "rbx/index.css";
+import {  Container, Message, Title } from "rbx";
+import StyledFirebaseAuth from 'react-firebaseui/StyledFirebaseAuth';
 import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
@@ -53,6 +57,40 @@ const useStyles = makeStyles({
 //     width: 500,
 //   },
 // }));
+
+const uiConfig = {
+  signInFlow: 'popup',
+  signInOptions: [
+    firebase.auth.GoogleAuthProvider.PROVIDER_ID
+  ],
+  callbacks: {
+    signInSuccessWithAuthResult: () => false
+  }
+};
+
+const Welcome = ({ user }) => (
+  <Message color="info">
+    <Message.Header>
+      Welcome, {user.displayName}
+      <Button primary onClick={() => firebase.auth().signOut()}>
+        Log out
+      </Button>
+    </Message.Header>
+  </Message>
+);
+
+const SignIn = () => (
+  <StyledFirebaseAuth
+    uiConfig={uiConfig}
+    firebaseAuth={firebase.auth()}
+  />
+);
+
+const Banner = ({ user }) => (
+  <React.Fragment>
+    { user ? <Welcome user={ user } /> : <SignIn /> }
+  </React.Fragment>
+);
 
 const useSelected = () => {
   var prod=[];
@@ -178,6 +216,7 @@ const App = () => {
 
   const classes = useStyles();
   const [data, setData] = useState({});
+  const [user, setUser] = useState(null);
   const [inv, setInv] = useState({});
   const products = Object.values(data);
   const invent=Object.values(inv)
@@ -218,6 +257,9 @@ const App = () => {
     return () => { db.off('value', handleData); };
   }, []);
 
+  useEffect(() => {
+    firebase.auth().onAuthStateChanged(setUser);
+  }, []);
 
   const toggleDrawer = (side, open) => event => {
     if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
@@ -262,7 +304,7 @@ const App = () => {
   return (
 
     <React.Fragment>
-      
+      <Banner user={ user } />
       <AppBar position="static" className = {classes.appbar} color='secondary'>
         <Toolbar>
           <IconButton onClick = {toggleDrawer('right', true)} edge = "end" className = {classes.menuButton} color = "inherit" aria-label = "menu">
