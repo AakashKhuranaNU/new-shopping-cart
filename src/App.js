@@ -61,7 +61,8 @@ const useSelected = () => {
 
   
 
-  const addItemCart = (itm, size) => {
+  const addItemCart = (itm, size,inv,setInv) => {
+    
     setSelectedProducts(
       selectedProduct.find(product => product.sku === itm.sku && product.size === size) ?
         selectedProduct.map(product =>
@@ -73,39 +74,38 @@ const useSelected = () => {
         :
         [{ ...itm, size, quantity: 1 }].concat(selectedProduct)
     );
+    var inve=inv;
+    inve[itm.sku][size]-=1
+    setInv(inve);        
+      // console.log(inv[product.sku]);
     alert("Added to Cart...\n"+"Click cart icon to see your cart")
   }
 
-  const removeItemCart = (itm) => {  
+  const removeItemCart = (itm,inv,setInv) => {  
     for(i=0;i<selectedProduct.length;++i)
     {
       if(itm.sku != selectedProduct[i].sku)prod.push(selectedProduct[i]);
       if(itm.sku === selectedProduct[i].sku && itm.size!=selectedProduct[i].size)prod.push(selectedProduct[i]);
     }
     setSelectedProducts(prod);
+    var inve=inv;
+    inve[itm.sku][itm.size]+=itm.quantity;
+    setInv(inve);
     prod=[];
-    alert("test lert 1")
-    console.log(prod)
-
-    // setSelectedProducts(
-    //     selectedProduct.map(product =>
-    //       product.sku === itm.sku  ?
-    //         { ...product, quantity: product.quantity-1 }
-    //         :
-    //         product
-    //     )        
-    // );
-    //  alert("test lert")
+    alert("Item Removed from Cart")
+        
   }
 
   
   return [selectedProduct, addItemCart ,removeItemCart];
 }
 
-const Items = ({product, addSelectedProduct}) => {
-  
+const Items = ({product, addSelectedProduct,inv,setInv}) => {
+  console.log("hereh");
+  console.log(inv[product.sku].S);
   const classes = useStyles();
   const [itemSize, setItemSize] = useState("");
+  // console.log(inv[product.sku].S);
   return (
     <Grid item s = {3}>
       <Card className = {classes.card}>
@@ -124,18 +124,24 @@ const Items = ({product, addSelectedProduct}) => {
           </CardContent>
         </CardActionArea>
         <CardActions>
-         
-        
-          <SelectSize setItemSize = {setItemSize} selectedSize = {itemSize} size = "S" />
-          <SelectSize setItemSize = {setItemSize} selectedSize = {itemSize} size = "M" />
-          <SelectSize setItemSize = {setItemSize} selectedSize = {itemSize} size = "L" />
-          <SelectSize setItemSize = {setItemSize} selectedSize = {itemSize} size = "XL" />
+        </CardActions>
 
-          <Button variant="contained" onClick={() => 
-            itemSize ? addSelectedProduct(product, itemSize) : alert("Select t-shirt size")}>
+          
+          {inv[product.sku].S ?<SelectSize setItemSize = {setItemSize} selectedSize = {itemSize} size = "S" /> :  console.log("unavailable")}
+          {inv[product.sku].M ?<SelectSize setItemSize = {setItemSize} selectedSize = {itemSize} size = "M" /> :  console.log("unavailable")}
+          {inv[product.sku].L ?<SelectSize setItemSize = {setItemSize} selectedSize = {itemSize} size = "L" /> :  console.log("unavailable")}
+          {inv[product.sku].XL ?<SelectSize setItemSize = {setItemSize} selectedSize = {itemSize} size = "XL" /> : console.log("unavailable")}
+          
+         
+          {(inv[product.sku].S || inv[product.sku].M || inv[product.sku].L || inv[product.sku].XL)?  <Button variant="contained" onClick={() => 
+            itemSize ? addSelectedProduct(product, itemSize,inv,setInv) : alert("Select t-shirt size")}>
             Add to Cart
           </Button>
-        </CardActions>
+          :
+         <div>Out of Stock</div>}
+    
+
+        
       </Card>
     </Grid>)
 };
@@ -158,11 +164,22 @@ const App = () => {
 
   const classes = useStyles();
   const [data, setData] = useState({});
+  const [inv, setInv] = useState({});
   const products = Object.values(data);
+  const invent=Object.values(inv)
   const [openCart, setOpenCart] = useState(false);
   const [selectedProduct, addSelectedProduct,delSelectedProduct] = useSelected();
   const myData = selectedProduct;
+  console.log("strt");
+  // console.log(inv[12064273040195392].S);
+  // console.log(prod)
   console.log(myData[0]);
+  // console.log(inv[12064273040195392])
+  console.log(data);
+  // console.log(products[0].sku);
+  // console.log(inv.map(inv));
+  console.log(invent);
+  console.log("end");
   const [state, setState] = React.useState({
     top: false,
     left: false,
@@ -170,14 +187,25 @@ const App = () => {
     right: false,
   });
   
+
+
   useEffect(() => {
-      const fetchProducts = async () => {
-      const response = await fetch('/data/products.json');
-      const json = await response.json();
-      setData(json);
-    };
-    fetchProducts();
-  }, []);
+  const fetchInventory = async () => {
+    const response = await fetch('/data/inventory.json');
+    const json = await response.json();
+    setInv(json);
+  };
+  fetchInventory();
+}, []);
+
+useEffect(() => {
+  const fetchProducts = async () => {
+  const response = await fetch('/data/products.json');
+  const json = await response.json();
+  setData(json);
+};
+fetchProducts();
+}, []);
 
   const toggleDrawer = (side, open) => event => {
     if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
@@ -186,6 +214,15 @@ const App = () => {
     setState({ ...state, [side]: open });
   };
   
+
+  const invsize = (produ,inve,inval) => {  
+    var i=0;
+    for(i=0;i<inve.length;++i)
+    {
+      if(inve[i]===produ.sku)return inval[i];
+    }    
+
+  }
 
 
 
@@ -200,11 +237,11 @@ const App = () => {
           <br/>Size: {myData.size}
           <br/>Quantity: {myData.quantity}
           <Divider/>
-          <IconButton aria-label="delete" onClick={()=> {delSelectedProduct(myData)}} >
+          <IconButton aria-label="delete" onClick={()=> {delSelectedProduct(myData,inv,setInv)}} >
            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>								
           </IconButton>
         </ListItem>)}
-        <button >Delete from Cart</button>
+        {/* <button >Delete from Cart</button> */}
         
       </List>
     </div>
@@ -217,7 +254,8 @@ const App = () => {
       <AppBar position="static" className = {classes.appbar} color='secondary'>
         <Toolbar>
           <IconButton onClick = {toggleDrawer('right', true)} edge = "end" className = {classes.menuButton} color = "inherit" aria-label = "menu">
-         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>          </IconButton>
+         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>          
+         </IconButton>
           <Drawer anchor = "right" open = {state.right} onClose={toggleDrawer('right', false)}>
             {sideList('right')}
 
@@ -227,11 +265,12 @@ const App = () => {
           </Typography>
         </Toolbar>
       </AppBar>
-      <h2 align='center'  >REACT SHOPPING CART </h2>
+      <h2 align='center'>REACT SHOPPING CART </h2>
       <Grid container spacing = {5} justify = "center">
-        {products.map(product => <Items product = {product} addSelectedProduct = {addSelectedProduct}></Items>)}     
+        {products.map(product => <Items product = {product} addSelectedProduct = {addSelectedProduct} inv={inv} setInv={setInv} ></Items>)}     
       </Grid>
     </React.Fragment>
+    // inv={inv.find(product.sku === inv.sku)}
   );
 };
 
