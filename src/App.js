@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import firebase from 'firebase/app';
+import 'firebase/database';
 import { makeStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Button from '@material-ui/core/Button';
@@ -56,7 +58,7 @@ const useSelected = () => {
   var prod=[];
   const [selectedProduct, setSelectedProducts] = useState([]);
   console.log(selectedProduct);
-  console.log("pr8int");
+  console.log("print");
   var i=0;  
 
   
@@ -102,7 +104,7 @@ const useSelected = () => {
 
 const Items = ({product, addSelectedProduct,inv,setInv}) => {
   console.log("hereh");
-  console.log(inv[product.sku].S);
+  // console.log(inv[product.sku].S);
   const classes = useStyles();
   const [itemSize, setItemSize] = useState("");
   // console.log(inv[product.sku].S);
@@ -123,8 +125,8 @@ const Items = ({product, addSelectedProduct,inv,setInv}) => {
             </Typography>
           </CardContent>
         </CardActionArea>
-        <CardActions>
-        </CardActions>
+        {/* <CardActions>
+        </CardActions> */}
 
           
           {inv[product.sku].S ?<SelectSize setItemSize = {setItemSize} selectedSize = {itemSize} size = "S" /> :  console.log("unavailable")}
@@ -160,6 +162,18 @@ const SelectSize = ({ setItemSize, selectedSize, size }) => {
   );
 }
 
+const firebaseConfig = {
+  apiKey: "AIzaSyConH3BuRJyl5K3aokJ7NNG44gX4AviqvY",
+  authDomain: "react-shopping-cart-49f12.firebaseapp.com",
+  databaseURL: "https://react-shopping-cart-49f12.firebaseio.com",
+  projectId: "react-shopping-cart-49f12",
+  storageBucket: "react-shopping-cart-49f12.appspot.com",
+  messagingSenderId: "162113176965",
+  appId: "1:162113176965:web:032113f1264177e2a3f0ec"
+}
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database().ref();
+
 const App = () => {
 
   const classes = useStyles();
@@ -171,7 +185,7 @@ const App = () => {
   const [selectedProduct, addSelectedProduct,delSelectedProduct] = useSelected();
   const myData = selectedProduct;
   console.log("strt");
-  // console.log(inv[12064273040195392].S);
+  console.log(inv);
   // console.log(prod)
   console.log(myData[0]);
   // console.log(inv[12064273040195392])
@@ -189,23 +203,21 @@ const App = () => {
   
 
 
-  useEffect(() => {
-  const fetchInventory = async () => {
-    const response = await fetch('/data/inventory.json');
-    const json = await response.json();
-    setInv(json);
-  };
-  fetchInventory();
-}, []);
+ 
 
-useEffect(() => {
-  const fetchProducts = async () => {
-  const response = await fetch('/data/products.json');
-  const json = await response.json();
-  setData(json);
-};
-fetchProducts();
-}, []);
+  useEffect(() => {
+    const handleData = async snap => {
+      console.log(snap)
+      console.log("above is snap value")
+      if (snap.val()) setInv(snap.val());
+      const response = await fetch('./data/products.json');
+      const json = await response.json();
+      setData(json);
+    }
+    db.on('value', handleData, error => alert(error));
+    return () => { db.off('value', handleData); };
+  }, []);
+
 
   const toggleDrawer = (side, open) => event => {
     if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
