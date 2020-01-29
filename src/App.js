@@ -212,11 +212,28 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database().ref();
 
+const cartCheckout = (myData, inv) => {
+  console.log("hell1");
+  console.log(myData);
+  console.log(inv);
+  db.transaction(inv => {
+      if (inv) {
+          Object.values(myData)
+              .forEach(item => {
+                  console.log(item.sku);
+                  inv[item.sku][item.size] -= item.quantity;
+              })
+      }
+      return inv;
+  });
+  alert("You Checked Out. Awesome!")
+}
+
 const App = () => {
 
   const classes = useStyles();
   const [data, setData] = useState({});
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(false);
   const [inv, setInv] = useState({});
   const products = Object.values(data);
   const invent=Object.values(inv)
@@ -226,7 +243,7 @@ const App = () => {
   console.log("strt");
   console.log(inv);
   // console.log(prod)
-  console.log(myData[0]);
+  console.log(selectedProduct);
   // console.log(inv[12064273040195392])
   console.log(data);
   // console.log(products[0].sku);
@@ -278,9 +295,9 @@ const App = () => {
 
   }
 
+ 
 
-
-  const sideList = side => (
+  const sideList =(user,side)  => (
     <div className = {classes.list} role = "presentation" onClick = {toggleDrawer(side, false)} onKeyDown = {toggleDrawer(side, false)}>
       <List>
         {myData.map(myData => 
@@ -295,6 +312,11 @@ const App = () => {
            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>								
           </IconButton>
         </ListItem>)}
+        {console.log("test")}
+        {console.log(inv)}
+        {console.log(myData)  }
+        {!user ? "Please login first!" : 
+              <Button onClick={() => cartCheckout(myData,inv  )}>Checkout</Button>}
         {/* <button >Delete from Cart</button> */}
         
       </List>
@@ -311,7 +333,7 @@ const App = () => {
          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96 0 1.1.9 2 2 2h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63h7.45c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.08-.14.12-.31.12-.48 0-.55-.45-1-1-1H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z"/></svg>          
          </IconButton>
           <Drawer anchor = "right" open = {state.right} onClose={toggleDrawer('right', false)}>
-            {sideList('right')}
+            {sideList(user,'right',inv)}
 
           </Drawer>
           <Typography align="right" variant = "h5" className = {classes.title}>
@@ -329,4 +351,3 @@ const App = () => {
 };
 
 export default App;
-
