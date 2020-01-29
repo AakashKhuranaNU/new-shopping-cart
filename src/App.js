@@ -136,8 +136,19 @@ const useSelected = () => {
         
   }
 
+  const removeItemCart2 = (itm) => {  
+    for(i=0;i<selectedProduct.length;++i)
+    {
+      if(itm.sku != selectedProduct[i].sku)prod.push(selectedProduct[i]);
+      if(itm.sku === selectedProduct[i].sku && itm.size!=selectedProduct[i].size)prod.push(selectedProduct[i]);
+    }
+    setSelectedProducts(prod);
+    // alert("done");
+
+  }
+
   
-  return [selectedProduct, addItemCart ,removeItemCart];
+  return [selectedProduct, addItemCart ,removeItemCart,removeItemCart2];
 }
 
 const Items = ({product, addSelectedProduct,inv,setInv}) => {
@@ -212,7 +223,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database().ref();
 
-const cartCheckout = (myData, inv) => {
+const cartCheckout = (myData, inv,remSelectedProduct) => {
   console.log("hell1");
   console.log(myData);
   console.log(inv);
@@ -220,12 +231,15 @@ const cartCheckout = (myData, inv) => {
       if (inv) {
           Object.values(myData)
               .forEach(item => {
-                  console.log(item.sku);
+                  console.log(item);
+                  remSelectedProduct(item);
                   inv[item.sku][item.size] -= item.quantity;
               })
       }
       return inv;
   });
+  // setco("yesy")
+  
   alert("You Checked Out. Awesome!")
 }
 
@@ -235,10 +249,11 @@ const App = () => {
   const [data, setData] = useState({});
   const [user, setUser] = useState(false);
   const [inv, setInv] = useState({});
+  const [co, setco] = useState('');
   const products = Object.values(data);
   const invent=Object.values(inv)
   const [openCart, setOpenCart] = useState(false);
-  const [selectedProduct, addSelectedProduct,delSelectedProduct] = useSelected();
+  const [selectedProduct, addSelectedProduct,delSelectedProduct,remSelectedProduct] = useSelected();
   const myData = selectedProduct;
   console.log("strt");
   console.log(inv);
@@ -315,8 +330,8 @@ const App = () => {
         {console.log("test")}
         {console.log(inv)}
         {console.log(myData)  }
-        {!user ? "Please login first!" : 
-              <Button onClick={() => cartCheckout(myData,inv  )}>Checkout</Button>}
+        {!user ? "Please login first to checkout!" : 
+              <Button onClick={() => cartCheckout(myData,inv,remSelectedProduct  )}>Checkout</Button>}
         {/* <button >Delete from Cart</button> */}
         
       </List>
